@@ -28,6 +28,7 @@ def run_server():
 
 threading.Thread(target=run_server).start()
 
+
 # ---------------- OWNER CHECK ----------------
 
 def owner(user):
@@ -55,35 +56,45 @@ Commands:
 
 /run <command>
 
-/status
-/logs <file>
-
 /install <package>
+
+/stats
+/logs <file>
 
 Send .py file → upload bot
 Send .zip → auto extract
 """)
 
 
-# ---------------- SYSTEM STATUS ----------------
+# ---------------- SERVER STATS ----------------
 
-@bot.message_handler(commands=['status'])
-def status(m):
+@bot.message_handler(commands=['stats'])
+def stats(m):
 
     if not owner(m.from_user.id):
         return
 
-    cpu = psutil.cpu_percent()
-    ram = psutil.virtual_memory().percent
-    disk = psutil.disk_usage('/').percent
+    cpu = psutil.cpu_percent(interval=1)
 
-    bot.reply_to(m,f"""
-💻 Server Status
+    ram = psutil.virtual_memory()
 
-CPU: {cpu}%
-RAM: {ram}%
-Disk: {disk}%
-""")
+    total_ram = round(ram.total / (1024**3), 2)
+    used_ram = round(ram.used / (1024**3), 2)
+    free_ram = round(ram.available / (1024**3), 2)
+
+    msg = f"""
+📊 Server Stats
+
+🧠 CPU Usage: {cpu} %
+
+💾 RAM Usage: {ram.percent} %
+
+📦 Total RAM: {total_ram} GB
+📉 Used RAM: {used_ram} GB
+📈 Free RAM: {free_ram} GB
+"""
+
+    bot.reply_to(m,msg)
 
 
 # ---------------- RUN COMMAND ----------------
@@ -97,6 +108,7 @@ def run(m):
     cmd = m.text.replace("/run ","")
 
     try:
+
         out = subprocess.check_output(cmd,shell=True).decode()
 
         if len(out) > 4000:
@@ -105,6 +117,7 @@ def run(m):
         bot.reply_to(m,out)
 
     except Exception as e:
+
         bot.reply_to(m,str(e))
 
 
