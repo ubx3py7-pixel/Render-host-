@@ -277,4 +277,4 @@ def upload(message):
 
 print("🚀 Hosting Manager Started")
 
-bot.infinity_polling()ng()
+bot.infinity_polling()
