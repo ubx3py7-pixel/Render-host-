@@ -28,7 +28,6 @@ def run_server():
 
 threading.Thread(target=run_server).start()
 
-
 # ---------------- OWNER CHECK ----------------
 
 def owner(user):
@@ -49,20 +48,19 @@ def start(m):
 
 Commands:
 
+/stats
 /bots
 /startbot <file>
 /stopbot <file>
 /restartbot <file>
 
 /run <command>
-
 /install <package>
 
-/stats
 /logs <file>
 
-Send .py file → upload bot
-Send .zip → auto extract
+Send .py → upload bot
+Send .zip → extract project
 """)
 
 
@@ -74,7 +72,8 @@ def stats(m):
     if not owner(m.from_user.id):
         return
 
-    cpu = psutil.cpu_percent(interval=1)
+    cpu_usage = psutil.cpu_percent(interval=1)
+    cpu_total = psutil.cpu_count()
 
     ram = psutil.virtual_memory()
 
@@ -85,7 +84,8 @@ def stats(m):
     msg = f"""
 📊 Server Stats
 
-🧠 CPU Usage: {cpu} %
+🧠 CPU Usage: {cpu_usage} %
+⚙️ Total vCPU: {cpu_total}
 
 💾 RAM Usage: {ram.percent} %
 
