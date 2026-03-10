@@ -3,6 +3,8 @@ import subprocess
 import os
 import psutil
 import zipfile
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 TOKEN = "8264209354:AAGUBDHsLpir61C3CTiQFz6_cWVBWOrczAI"
 OWNER_ID = 6940098775
@@ -11,9 +13,28 @@ bot = telebot.TeleBot(TOKEN)
 
 running = {}
 
+# ---------------- RENDER PORT FIX ----------------
+
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is running")
+
+def run_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), Handler)
+    server.serve_forever()
+
+threading.Thread(target=run_server).start()
+
+# ---------------- OWNER CHECK ----------------
+
 def owner(user):
     return user == OWNER_ID
 
+
+# ---------------- START ----------------
 
 @bot.message_handler(commands=['start'])
 def start(m):
@@ -56,8 +77,7 @@ def status(m):
     ram = psutil.virtual_memory().percent
     disk = psutil.disk_usage('/').percent
 
-    bot.reply_to(m,
-f"""
+    bot.reply_to(m,f"""
 💻 Server Status
 
 CPU: {cpu}%
@@ -77,7 +97,6 @@ def run(m):
     cmd = m.text.replace("/run ","")
 
     try:
-
         out = subprocess.check_output(cmd,shell=True).decode()
 
         if len(out) > 4000:
@@ -86,7 +105,6 @@ def run(m):
         bot.reply_to(m,out)
 
     except Exception as e:
-
         bot.reply_to(m,str(e))
 
 
@@ -97,6 +115,8 @@ def bots(m):
 
     if not owner(m.from_user.id):
         return
+
+    os.makedirs("bots", exist_ok=True)
 
     files = os.listdir("bots")
 
@@ -166,7 +186,6 @@ def restart(m):
     file = m.text.split(" ")[1]
 
     if file in running:
-
         running[file].terminate()
 
     process = subprocess.Popen(["python",f"bots/{file}"])
@@ -206,7 +225,6 @@ def logs(m):
     if os.path.exists(file):
 
         with open(file) as f:
-
             data = f.read()[-3500:]
 
         bot.reply_to(m,data)
@@ -224,6 +242,9 @@ def upload(message):
     if not owner(message.from_user.id):
         return
 
+    os.makedirs("uploads", exist_ok=True)
+    os.makedirs("bots", exist_ok=True)
+
     file_info = bot.get_file(message.document.file_id)
 
     data = bot.download_file(file_info.file_path)
@@ -233,16 +254,12 @@ def upload(message):
     path = f"uploads/{name}"
 
     with open(path,"wb") as f:
-
         f.write(data)
 
-
-    # zip extract
 
     if name.endswith(".zip"):
 
         with zipfile.ZipFile(path,"r") as zip_ref:
-
             zip_ref.extractall("bots")
 
         bot.reply_to(message,"📦 ZIP extracted to bots folder")
@@ -260,4 +277,4 @@ def upload(message):
 
 print("🚀 Hosting Manager Started")
 
-bot.infinity_polling()
+bot.infinity_polling()ng()
